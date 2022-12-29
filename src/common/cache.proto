@@ -1,0 +1,13 @@
+syntax = "proto2";
+package config;
+import "topn.proto";
+
+message CacheEntry {
+  optional topn.TopnReq topn_req = 1;
+  optional topn.TopnResponse topn_rsp = 2;
+}
+
+message Cache {
+  repeated CacheEntry entry = 1;
+}
+

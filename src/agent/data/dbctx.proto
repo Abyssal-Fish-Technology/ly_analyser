@@ -1,0 +1,28 @@
+syntax = "proto2";
+message DBCtxOptions {
+  enum Engine {
+    LMDB = 0;
+    HAMSTERDB = 1;
+    LEVELDB = 2;
+    BDB = 3;
+    KYOTOTREEDB = 4;
+    UNQLITEDB = 5;
+    SSDB = 6;
+  };
+  optional string db_path = 1;
+  optional string db_name = 2;
+  optional bool read_only = 3 [default = false];
+  optional bool dup_sort = 4 [default = false]; // scanner,ip_set,xy(ip):false xy(svc):true
+  optional bool dup_fixed = 5 [default = true]; // scanner,ip_set:false xy:true
+  optional bool integer_key = 6 [default = false]; // scanner,xy(svc):false ip_set,xy(ip):true
+  // Auto commit when closing.
+  optional bool auto_commit = 7 [default = true];
+  // Time alignment. Default is 1 hour.
+  optional uint32 time_unit = 8 [default = 3600];
+  // Time backtrack limit. Should be count of time_unit.
+  // Default is 720 hours. aka, 30 days.
+  optional uint32 backtrack = 9 [default = 720];
+  optional Engine engine = 10 [default = UNQLITEDB];
+  optional uint64 mdb_max_map_size = 11 [default = 100000000];  // 100MB
+  optional uint32 mdb_max_db = 12 [default = 1];   // each db has seperated file.
+}

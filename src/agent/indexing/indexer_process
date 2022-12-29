@@ -1,0 +1,54 @@
+###########eature and event#########
+#ip扫描
+ip_scan = enable
+
+#port扫描
+port_scan = enable
+
+#资产服务（碰撞资产）
+assetsrv = enable
+
+#dns情报
+dns = enable
+
+#dns隧道
+dnstunnel = enable
+
+#ip情报
+ip_set = enable
+
+#黑白名单
+bw = enable
+
+#http url内容
+url_content = enable
+
+#icmp隧道
+icmptunnel = enable
+
+
+###########event#############
+threshold = enable
+
+#服务器外联
+frn_trip = enable
+
+
+
+###########feature###########
+mo = enable
+
+#tcp SYN
+tcpinit = enable
+
+#服务(（不碰资产）
+service = enable
+
+#dga
+dga = enable
+
+#包识别威胁
+threat = enable
+
+#挖矿
+mining = enable

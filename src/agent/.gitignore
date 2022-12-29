@@ -1,0 +1,12 @@
+#ignore files below which is not necessary for server deployment
+*.swp
+*.so
+*.o
+flow_scan
+extractor
+indexer
+extract_event
+extract_scanner
+config_updater
+flow_capd_launcher
+libflow_filter.a

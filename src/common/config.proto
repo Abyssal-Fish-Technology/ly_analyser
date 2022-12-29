@@ -1,0 +1,124 @@
+syntax = "proto2";
+package config;
+import "mo.proto";
+import "policy.proto";
+
+message Config {
+  optional Controller controller = 1;
+  repeated Device dev = 2;
+  repeated mo.MoRecord mo = 3;
+  repeated Event event = 4;
+  repeated policy.PolicyIndex policy_index = 5;
+  repeated policy.PolicyData policy_data = 6;
+}
+
+message Controller {
+  optional string host = 1;
+  optional string port = 2;
+}
+
+message Interface {
+  optional uint32 devid = 1;
+  optional uint32 no = 2;
+  optional string name = 3;
+  optional string desc = 4;
+}
+
+message Device {
+  optional uint32 id = 1 ;
+  optional string name = 2;
+  optional string type = 3 [default = 'router'];
+  optional string model = 4;
+  optional uint32 agentid = 5;
+  optional string creator = 6;
+  optional string desc = 7;
+  optional string ip = 8;
+  optional uint32 port = 9;
+  optional bool disabled = 10 [default = false]; 
+  repeated Interface interfaces = 11;
+  optional string flowtype = 12;
+}
+
+message Event {
+  enum Type {
+    INVALID = 0;
+    THRESHOLD = 1;
+    PORT_SCAN = 2;
+    SRV = 3;
+    DNS = 4;
+    BLACK = 5;
+    SUS = 6;
+    DNS_TUN = 7;
+    IP_SCAN = 8;
+    URL_CONTENT = 9;
+    FRN_TRIP = 10;
+    ICMP_TUN = 11;
+    DGA = 12;
+    THREAT = 13; 
+    DNSTUN_AI = 14;
+    MINING = 15; 
+  };
+  required uint32 type_id = 1;
+  required uint32 config_id = 2;
+  optional uint32 moid = 3;
+  optional string thres_type = 4;
+  optional string data_type = 5;
+  optional uint32 min = 6;
+  optional uint32 max = 7;
+  optional string grep_rule = 8;
+  optional uint32 devid = 9;
+  optional uint32 status_moid = 10;
+  optional uint32 port = 11;
+  optional string ip = 12;
+  optional string protocol = 13;
+
+  enum Weekday {
+    SUN = 0;
+    MON = 1;
+    TUE = 2;
+    WED = 3;
+    THU = 4;
+    FRI = 5;
+    SAT = 6;
+  };
+  repeated Weekday weekday = 14;
+  optional int32 stime_hour = 15;
+  optional int32 stime_min = 16;
+  optional int32 stime_sec = 17;
+  optional int32 etime_hour = 18;
+  optional int32 etime_min = 19;
+  optional int32 etime_sec = 20;
+  enum Coverrange {
+    WITHIN = 0;
+    WITHOUT = 1;
+  };
+  optional Coverrange coverrange = 21;
+
+  repeated string namelist = 22;
+  optional float  threatscore = 23;
+  optional uint32 qcount = 24;
+  optional string qname = 25;
+  optional uint32 qtype = 26;
+  optional uint32 namelen = 27;
+  optional uint32 fqcount = 28;
+  optional uint32 detvalue = 29;
+  optional string desc = 30;
+  optional string sip = 31;
+  optional string dip = 32;
+  optional string pat = 33;
+  enum Ctype {
+    INVAILD = 0;
+    SQL_INJECT = 1;   //sql注入
+    XSS = 2;         //跨站脚本
+    RESO_EXPLORE = 3;    //资源探测
+    VISIT_ADMIN = 4;     //访问管理页面
+    PULL_DB = 5;          //拖库
+    CMD_EXEC = 6;        //命令执行
+    CODE_EXEC = 7;      //代码执行
+    XML_ENTITY = 8;    //XML实体攻击
+  }; 
+  optional Ctype sub_type = 34;
+  optional uint32 IF1 = 35;
+  optional uint32 IF2 = 36;
+  optional uint32 IF3 = 37;
+}

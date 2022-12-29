@@ -1,0 +1,10 @@
+*.o
+*.swp
+nfdump
+nfdump2
+nfanon
+nfcapd
+nfexpire
+nfdump.test.out
+nfreplay
+*.a

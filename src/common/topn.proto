@@ -1,0 +1,76 @@
+syntax="proto2";
+package topn;
+message TopnReq {
+  optional uint32 devid = 1 [default = 1];
+  optional uint32 starttime = 2 [default = 0];
+  optional uint32 endtime = 3 [default = 0];
+  optional string sortby = 4 [default = "ALL"];
+  optional uint32 limit = 5 [default = 10];
+  optional uint32 step = 6 [default = 0];
+  optional string filter = 7 [default = "any"];
+
+  optional string ip = 8;
+  optional string ip1 = 9;
+  optional string ip2 = 10;
+  optional uint32 proto = 11;
+  optional uint32 port = 12;
+  optional uint32 port1 = 13;
+  optional uint32 port2 = 14;
+  optional uint32 groupid = 15;
+  enum OrderBy {
+    Bytes =1;
+    Packets = 2;
+    Flows = 3;
+  }
+  optional OrderBy orderby = 16 [default = Bytes];
+  optional string include = 17;
+  optional string exclude = 18;
+  optional bool setupcache = 19 [default = false];
+  optional string srcdst = 20 [default = "srcdst"];
+  optional string app_proto = 21;
+  optional string qname = 22;
+  optional uint32 qtype = 23;
+  optional uint32 service_type = 24;
+  optional string service_name = 25;
+}
+
+message TopnRecord {
+  optional uint32 devid = 1 [default = 0];
+  optional string devip = 2 [default = ""];
+  optional uint32 time = 3;
+  optional string type = 4 [default = "ALL"];
+  optional uint64 bytes = 5 [default = 0];
+  optional uint64 pkts = 6 [default = 0];
+  optional uint64 flows = 7 [default = 0];
+
+  optional uint32 protocol = 8;
+  optional string ip = 9;
+  optional uint32 port = 10;
+  optional string sip = 11;
+  optional uint32 sport = 12;
+  optional string dip = 13;
+  optional uint32 dport = 14;
+
+  optional uint32 inif = 15;
+  optional uint32 outif = 16;
+
+  optional uint32 flags = 17;
+  optional uint32 tos = 18;
+
+  optional uint32 popular_service = 19;
+  optional uint32 service = 20;
+  optional uint32 scanner = 21;
+  optional uint32 whitelist = 22;
+  optional uint32 blacklist = 23;
+  optional uint32 moid = 24;
+  optional string app_proto = 25;
+  optional string context = 26;
+  optional uint32 service_type = 27;
+  optional string service_name = 28;
+  optional string service_info1 = 29;
+  optional string service_info2 = 30;
+}
+
+message TopnResponse{
+  repeated TopnRecord records = 1;
+}

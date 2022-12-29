@@ -1,0 +1,131 @@
+syntax = "proto2";
+package feature;
+
+message FeatureReq {
+	optional uint32 devid = 1 [default = 1];
+	enum Type {
+    EMPTY = 0;
+		SUS = 1;
+		POP = 2;
+		PORT_SCAN = 3;
+		SERVICE = 4;
+		TCPINIT = 5;
+		FORCE = 6;
+		DNS_TUN = 7;
+		FLOOD = 8;
+		BLACK = 9;
+		WHITE = 10;
+    ASSET_IP = 11;
+    MO = 12;
+    DNS = 13;
+    ASSET_URL = 14;
+    ASSET_HOST = 15;
+    ASSET_SRV = 16;
+    URL_CONTENT = 17;
+    DGA = 18;
+    IP_SCAN = 19;
+    API = 20;
+	};
+	optional Type type =2;
+	optional uint32 starttime = 3 [default = 0];
+	optional uint32 endtime = 4 [default = 0];
+	optional uint32 proto = 5;
+	optional string sip = 6;
+	optional uint32 sport = 7;
+	optional string dip = 8;
+	optional uint32 dport = 9;
+	optional uint64 peers = 10; 
+	optional uint32 flows = 11;  
+	optional string ip = 12;
+	optional uint32 port = 13;
+  optional uint32 limit = 14 [default = 10];
+  enum ValidType {
+    ALL = 1;
+    ACTIVE = 2;
+    INACTIVE = 3;
+  };
+  optional ValidType valid_type = 16;
+  enum OrderBy {
+    BYTES = 1;
+    PACKETS = 2;
+    PEERS = 3;
+    FLOWS = 4;
+  };
+  optional OrderBy orderby = 17 [default = BYTES];
+  optional string net = 18;
+  optional uint32 moid = 19;
+  optional uint32 groupid = 20;
+  optional string qname = 21;
+  optional uint32 qtype = 22;
+  optional bool ti_mark = 23;
+  optional bool srv_mark = 24;
+  optional string retcode = 25;
+  optional string url = 26;
+  optional string host = 27;
+  optional string app_proto = 28;
+  optional string fqname = 29;
+  optional uint32 retcode_cur = 30;
+  optional string srv_name = 31;
+} 
+
+message FeatureRecord {
+	optional uint32 devid = 1 [default = 0];
+	optional string type = 2;
+	optional uint32 time = 3;
+	optional uint32 duration = 4;
+	optional uint32 protocol = 5;
+	optional uint64 bytes = 6;
+	optional uint64 flows = 7;
+	optional uint64 pkts = 8;
+	optional string sip = 9;
+	optional uint32 sport = 10;
+	optional string dip = 11;
+	optional uint32 dport = 12;
+	optional uint64 peers = 13; 
+	optional string ip = 14;
+	optional uint32 port = 15;
+  optional uint64 peak_bytes = 16;
+  optional uint64 peak_pkts = 17;
+  optional uint64 peak_flows = 18;
+  optional uint32 moid = 19;
+  optional string bwclass = 20;
+  optional string ti_mark = 21;
+  optional string srv_mark = 22;
+  optional string qname = 23;
+  optional uint32 qtype = 24;
+  optional string url = 25;
+  optional uint32 retcode = 26;
+  optional string host = 27;
+  optional string app_proto = 28;
+  optional string fqname = 29;
+  optional string lqname = 30;
+  optional double fratio = 31;
+  optional uint64 score = 32;
+  optional string srv_name = 33;
+  optional string srv_version = 34;
+  optional string srv_type = 35;
+  optional string dev_type = 36;
+  optional string dev_name = 37;
+  optional string dev_vendor = 38;
+  optional string dev_model = 39;
+  optional string os_type = 40;
+  optional string os_name = 41;
+  optional string os_version = 42;
+  optional string midware_type = 43;
+  optional string midware_name = 44;
+  optional string midware_version = 45;
+  optional string threat_type = 46;
+  optional string threat_name = 47;
+  optional string threat_version = 48;
+  optional uint64 srv_time = 49;
+  optional uint64 dev_time = 50;
+  optional uint64 os_time = 51;
+  optional uint64 midware_time = 52;
+}
+
+message FeatureResponse {
+	repeated FeatureRecord records = 1;
+}
+
+
+

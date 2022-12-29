@@ -1,0 +1,74 @@
+syntax = "proto2";
+package eventfeature;
+
+message EventFeatureReq {
+	optional uint32 devid = 1 [default = 1];
+	enum Type {
+    EMPTY = 0;
+		TI = 1;
+		IP_SCAN = 2;
+		PORT_SCAN = 3;
+		SRV = 4;
+		DNS_TUN = 5;
+		BLACK = 6;
+    MO = 7;
+    DNS = 8;
+    DGA = 9;
+    ICMP_TUN = 10;
+    FRN_TRIP = 11;
+    CAP = 12;
+    URL_CONTENT = 13;
+    DNSTUN_AI = 14;
+    MINING = 15;
+	};
+	optional Type type =2;
+	optional uint32 starttime = 3 [default = 0];
+	optional uint32 endtime = 4 [default = 0];
+	optional uint32 proto = 5;
+	optional string sip = 6;
+	optional uint32 sport = 7;
+	optional string dip = 8;
+	optional uint32 dport = 9;
+	optional string ip = 10;
+	optional uint32 port = 11;
+  optional uint32 limit = 12 [default = 10];
+  optional string domain = 13;
+  optional uint32 qtype = 14;
+  optional string retcode = 15;
+  optional string url = 16;
+  optional string host = 17;
+  optional string obj = 18;
+} 
+
+message EventFeatureRecord {
+	optional uint32 devid = 1 [default = 0];
+	optional uint32 type = 2;
+	optional uint32 time = 3;
+	optional uint32 protocol = 4;
+	optional uint64 bytes = 5;
+	optional uint64 flows = 6;
+	optional uint64 pkts = 7;
+	optional string sip = 8;
+	optional uint32 sport = 9;
+	optional string dip = 10;
+	optional uint32 dport = 11;
+  optional string domain = 12;
+  optional uint32 qtype = 13;
+  optional string url = 14;
+  optional uint32 retcode = 15;
+  optional string obj = 16;
+  optional uint32 model = 17;
+  optional string payload = 18;
+  optional string captype = 19;
+  optional string capname = 20;
+  optional string capvers = 21;
+  optional uint64 capusec = 22;
+  optional uint32 icmp_type = 23;
+}
+
+message EventFeatureResponse {
+	repeated EventFeatureRecord records = 1;
+}
+
+
+

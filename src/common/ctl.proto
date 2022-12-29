@@ -1,0 +1,38 @@
+syntax = "proto2";
+package ctl;
+
+message CtlReq {
+  enum Srv {
+    ALL = 0;
+    SSH = 1;
+    HTTP = 2;
+    FSD = 3;
+    CAP = 4;
+    PROBE = 5;
+    DISK = 6;
+  };
+  optional Srv type = 1;
+  enum Operate {
+    START = 0;
+    STOP = 1;
+    STAT = 2;
+    RESTART = 3;
+  };
+  required Operate op = 2;
+  optional string tid = 3 [default = "0"];
+  optional string devid = 4;
+}
+
+message CtlRecord {
+  optional string type = 1;
+  optional string op = 2;
+  optional uint32 tid = 3;
+  optional string status = 4;
+  optional string desc = 5;
+  optional string result = 6;
+  optional uint32 time = 7;
+}
+
+message CtlResponse {
+  repeated CtlRecord records = 1; 
+}

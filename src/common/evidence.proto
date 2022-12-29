@@ -1,0 +1,41 @@
+syntax = "proto2";
+package evidence;
+
+message EvidenceReq {
+	optional uint32 devid      = 1 [default = 0];
+  optional string ip         = 2;
+  optional uint32 port       = 3;
+	optional uint32 time_sec   = 4;
+	optional uint32 time_usec  = 5;
+  optional bool   download   = 6;
+} 
+
+message EvidenceRecord {
+  optional uint32 devid      = 1 [default = 0];
+  optional string ip         = 2;
+  optional uint32 port       = 3;
+  optional uint32 time_sec   = 4;
+  optional uint32 time_usec  = 5;
+
+  optional uint32 caplen     = 6;
+  optional uint32 pktlen     = 7;
+
+  optional string smac       = 8;
+  optional string dmac       = 9;
+  optional string sip        = 10;
+  optional uint32 sport      = 11;
+  optional string dip        = 12;
+  optional uint32 dport      = 13;
+  optional uint32 protocol   = 14;
+  optional string payload    = 15;
+
+  optional bytes  pkthdr     = 16;
+  optional bytes  packet     = 17;
+}
+
+message EvidenceResponse {
+	repeated EvidenceRecord records = 1;
+}
+
+
+

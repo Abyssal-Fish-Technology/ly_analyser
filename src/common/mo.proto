@@ -1,0 +1,46 @@
+syntax = "proto2";
+package mo;
+message MoReq {
+  optional string moip = 1;
+  optional string moport = 2;
+  optional string protocol = 3;
+  optional string pip = 4;
+  optional string pport = 5;
+  optional string desc = 6;
+  optional string tag = 7;
+  optional string mogroup = 8;
+  enum Op {
+    ADD =1;
+    DEL = 2;
+    MOD = 3;
+    GET = 4;
+    GADD = 5;
+    GDEL = 6;
+    GGET = 7;
+    GET_FILTER = 8;
+    GMOD = 9;
+  }
+  optional Op op = 9;
+  optional string moid = 10;
+  optional uint32 mogid = 11;
+  optional string devid = 12;
+  optional string direction = 13;
+  optional string filter = 14;
+}
+
+message MoRecord {
+  optional uint32 id = 1;
+  optional string moip = 2;
+  optional string moport = 3;
+  optional string protocol = 4;
+  optional string pip = 5;
+  optional string pport = 6;
+  optional string desc = 7;
+  optional string tag = 8;
+  optional string mogroup = 9;
+  optional uint32 mogroupid = 10;
+  optional uint32 addtime = 11;
+  optional string filter = 12;
+  optional uint32 devid = 13;
+  optional string direction = 14;
+}

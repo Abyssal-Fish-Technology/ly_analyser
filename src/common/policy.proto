@@ -1,0 +1,59 @@
+syntax="proto2";
+package policy;
+import "mo.proto";
+
+enum PolicyName {
+  INVALID = 0;
+  MO = 1;
+  BLACK = 2;
+  WHITE = 3;
+  SCAN = 4;
+  SRV = 5;
+  I_PORT_SCAN = 6;
+  I_IP_SCAN = 7;
+  I_SRV = 8;
+  POP = 9;
+  SUS = 10;
+  DNS_B = 11;
+  DNS_W = 12;
+  DNS_D = 13;
+  DNS_L = 14;
+  ASSET = 15;
+}
+
+enum StorageFormat {
+  EMBEDDED = 1;
+  PROTO = 2;
+  CSV = 3;
+  DAT = 4;
+  NONE = 5;
+}
+
+enum DataFormat {
+  MO_DATA = 1; //MO has been defined in 'enum PolicyName'
+  ITEM = 2;
+}
+
+message DataItem {
+  optional string ip = 1;
+  optional uint32 port = 2;
+  optional uint32 pport = 3;
+  optional string pip = 4;
+  optional string protocol = 5;
+  optional uint32 scale = 6;
+  optional uint32 devid = 7;
+}
+
+message PolicyIndex {
+  required PolicyName policy = 1;         // policy name
+  optional string storage = 2;            // file name
+  required StorageFormat format = 3;      // embedded, proto, csv, dat
+  repeated string policy_data_label = 4;  // labels of PolicyData that having the same storage.
+}
+
+message PolicyData {
+  required string label = 1;              // label for a certain type of PolicyData, which transport by include/exclude.
+  required DataFormat format = 2;         // mo, item
+  optional mo.MoRecord mo = 3;            // mo record
+  repeated DataItem item = 4;             // black/white/scan/dos items
+}

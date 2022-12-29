@@ -1,0 +1,43 @@
+message BaselineSlot {
+  optional uint32 id = 1;
+  optional string name = 2;
+  optional string desc = 3;
+  optional bool active = 4;
+  optional uint32 devid = 5;
+  optional uint32 interface_no = 6;
+  enum InterfaceDirection {
+    INVALID = 0;
+    IN = 1;
+    OUT = 2;
+    BOTH = 3;
+  }
+  optional InterfaceDirection interface_direction = 7 [ default = BOTH ];
+  optional uint32 moid = 8;
+  optional uint32 monobjid = 9;
+  optional uint32 monhostid = 10;
+  optional uint32 ip = 11;
+  optional string filter = 12;
+  repeated Baseline baselines = 13;
+}
+
+message Baseline {
+  optional uint64 id = 1;
+  optional string name = 2;
+  optional uint32 devid = 3;
+  optional string filter = 4;
+  optional uint32 start_time = 5;
+  optional uint32 interval = 6;
+  optional uint32 update_time = 7;
+  optional bool computed = 8;
+  enum Unit {
+    BPS = 0;
+    PPS = 1;
+    FPS = 2;
+  }
+  optional Unit unit = 9;
+}
+
+message BaselineSlots {
+  repeated BaselineSlot slots = 1;
+}
+

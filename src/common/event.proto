@@ -1,0 +1,46 @@
+syntax = "proto2";
+package event;
+message GenEventReq {
+  optional uint32 starttime = 1;
+  optional uint32 endtime = 2;
+  optional uint32 type_id = 3;
+  repeated uint32 config_id = 4;
+}
+
+message GenEventRes {
+  repeated GenEventRecord records = 1;
+}
+
+message GenEventRecord {
+  optional uint32 time = 1;
+  required uint32 type_id = 2;
+  required uint32 config_id = 3;
+  required uint32 devid = 4;
+  optional string obj = 5;
+  optional uint32 thres_value = 6;
+  optional uint32 alarm_value = 7;
+  optional string value_type = 8;
+  optional uint32 model_id = 9;
+}
+
+message WebReq {
+  optional uint32 starttime = 1;
+  optional uint32 endtime = 2;
+  optional uint32 step = 3;
+  optional string type = 4;
+  optional uint32 devid = 5;
+  optional uint32 event_id = 6;
+  optional uint32 id = 7;
+  optional string obj = 8;
+  optional string level = 9;
+  enum ReqType {
+    ORI =1;
+    AGGRE = 2;
+    SET_PROC_STATUS = 3;
+  }
+  optional ReqType req_type = 10 [default = ORI];
+  optional uint32 is_alive = 11;
+  optional string proc_status = 12;
+  optional string proc_comment = 13;
+  optional uint32 model = 14;
+}

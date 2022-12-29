@@ -1,0 +1,6 @@
+#ignore files below which is not necessary for server deployment
+libnfdump.a
+*.so
+*.o
+*.pb.cc
+*.swp

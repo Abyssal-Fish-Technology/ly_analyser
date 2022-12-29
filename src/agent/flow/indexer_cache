@@ -1,0 +1,324 @@
+全部流量：
+[#001]
+  include = 
+  exclude = 
+  sortby = all
+  step = 300
+  filter = 
+  ip =
+  ip1 =
+  ip2 = 
+  proto = 
+  port = 
+  port1 = 
+  port2 =
+  limit = 
+  orderby =
+  groupid =  
+  srcdst = 
+  setupcache = 
+
+流量页面
+有风险
+[#002]
+  include = black,i_port_scan,i_srv
+  exclude = 
+  sortby = all
+  step = 300
+  filter = 
+  ip = 
+  ip1 = 
+  ip2 = 
+  proto = 
+  port = 
+  port1 = 
+  port2 = 
+  limit = 100
+  orderby =
+  groupid = 
+  srcdst = 
+  setupcache =
+
+较安全
+[#003]  
+  include = pop,white
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 100
+  orderby =
+  groupid =
+  srcdst =
+  setupcache =
+ 
+已追踪
+[#004]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 100
+  orderby =
+  groupid = 
+  srcdst =
+  setupcache =
+ 
+未识别
+[#005]
+  include = 
+  exclude = mo,sus,pop,black,white,i_port_scan,i_srv
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 100
+  orderby =
+  groupid = 
+  srcdst =
+  setupcache =
+
+情报命中
+[#006]
+  include = sus
+  exclude = 
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 100
+  orderby =
+  groupid = 
+  srcdst =
+  setupcache =
+
+追踪页面
+Mo分组统计信息
+unclassified
+[#007]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid = 1
+  srcdst =
+  setupcache =
+
+scan
+[#008]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid = 2
+  srcdst =
+  setupcache =
+
+dos
+[#009]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid = 3
+  srcdst =
+  setupcache =
+
+service
+[#010]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid = 4
+  srcdst =
+  setupcache =
+
+abnormal
+[#011]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid = 5
+  srcdst =
+  setupcache =
+
+observe
+[#012]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid = 6
+  srcdst =
+  setupcache =
+
+发现页面
+目标流量汇聚细节
+[#013]
+  include = 
+  exclude =
+  sortby = conv
+  step = 
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 1000
+  orderby =
+  groupid = 
+  srcdst =
+  setupcache =
+
+追踪页面
+全部mo流量
+[#014]
+  include = mo
+  exclude =
+  sortby = all
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 
+  orderby =
+  groupid =
+  srcdst =
+  setupcache =
+
+流量页面
+节点流量排行
+[#015]
+  include =
+  exclude =
+  sortby = ip
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 100
+  orderby =
+  groupid =
+  srcdst =
+  setupcache =
+
+[#016]
+  include = 
+  exclude =
+  sortby = port
+  step = 300
+  filter =
+  ip =
+  ip1 =
+  ip2 =
+  proto =
+  port =
+  port1 =
+  port2 =
+  limit = 100
+  orderby =
+  groupid =
+  srcdst =
+  setupcache =

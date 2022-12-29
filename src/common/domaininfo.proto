@@ -1,0 +1,7 @@
+syntax = "proto2";
+package domaininfo;
+
+message Req {
+  repeated string namelist = 1;
+  optional int32  threshold = 2 [ default = 4 ];
+}

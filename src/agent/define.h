@@ -1,0 +1,28 @@
+#define AGENT_WORK_DIR		"/Agent"
+#define AGENT_BIN_DIR   	AGENT_WORK_DIR"/bin"
+#define AGENT_TMP_DIR   	AGENT_WORK_DIR"/tmp"
+#define AGENT_DATA_DIR		AGENT_WORK_DIR"/data"
+#define AGENT_FLOW_DIR		AGENT_WORK_DIR"/flow"
+#define AGENT_LOG_DIR		AGENT_WORK_DIR"/log"
+#define AGENT_CACHE_DIR		AGENT_WORK_DIR"/cache"
+#define AGENT_ETC_DIR		AGENT_WORK_DIR"/etc"
+#define AGENT_INI_FILE		AGENT_ETC_DIR"/agent.ini"
+#define AGENT_DEV_FILE		AGENT_DATA_DIR"/device"
+#define AGENT_CACHE_CONFIG_FILE	AGENT_DATA_DIR"/indexer_cache"
+#define AGENT_CFG_FILE		AGENT_DATA_DIR"/config"
+#define AGENT_EVENT_FILE	AGENT_DATA_DIR"/event"
+#define AGENT_DB_ROOT		AGENT_DATA_DIR"/db"
+#define AGENT_EVENT_DB_ROOT		AGENT_DATA_DIR"/eventdb"
+#define AGENT_PAT_FILE    AGENT_DATA_DIR"/indexer_feature"
+#define AGENT_DOMAIN_FILE  AGENT_DATA_DIR"/ti_dns"
+#define AGENT_SUBDOMAIN_FILE  AGENT_DATA_DIR"/domains"
+#define AGENT_FILTER_FILE  AGENT_DATA_DIR"/indexer_process"
+
+#define FLOW_CAPD_LAUNCHER 	AGENT_BIN_DIR"/flow_capd_launcher"
+#define INDEXER			AGENT_BIN_DIR"/indexer"
+#define SCANNER_UPLOAD_URI	"/scanner"
+
+// deprecated
+//#define CC_FILE					AGENT_DATA_DIR"/cc"
+#define REDIS_HOST			"127.0.0.1"
+#define REDIS_PORT			6379

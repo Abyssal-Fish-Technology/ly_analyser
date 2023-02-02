@@ -115,7 +115,7 @@
 	
 	# 编译agent
 	cd agent/
-	make && make instal
+	make && make install
 	
 	# 编译nfdump
 	cd nfdump/

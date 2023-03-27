@@ -65,7 +65,7 @@
 2. 编译安装cgicc 
 	tar -zxvf cgicc-3.2.16.tar.gz -C ./
 	cd ./cgicc-3.2.16
-	./config
+	./configure
 	make && make install
 	
 3. 编译安装cppdb

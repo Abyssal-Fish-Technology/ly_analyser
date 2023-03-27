@@ -8,9 +8,9 @@
 
 
 // These are used for Event::data_type.
-static char kBPS[] = "bps";
+static char kBPS[] = "Bps";
 static char kPPS[] = "pps";
-static char kFPS[] = "sps";
+static char kFPS[] = "fps";
 
 ThresholdFilter::ThresholdFilter(
     const Event& event_config, u32 dev_id, const string& model, u32 start_time, u32 end_time,
@@ -365,13 +365,13 @@ event::GenEventRes ThresholdFilter::CheckThreshold(std::vector<master_record_t>*
     return events;
   }
 
-  double bps = 0, pps = 0, fps = 0;
+  double Bps = 0, pps = 0, fps = 0;
   const string& data_type = ptr->event_config_.data_type();
   for (auto it = ptr->tis_.begin(); it != ptr->tis_.end(); it++) {
     auto& s = it->first;
     auto& p = it->second;
     if (ptr->event_config_.thres_type() == "abs") {
-      bps = double(p.bytes) / interval;
+      Bps = double(p.bytes) / interval;
       pps = double(p.pkts) / interval;
       fps = double(p.flows) / interval;
     } else {
@@ -381,7 +381,7 @@ event::GenEventRes ThresholdFilter::CheckThreshold(std::vector<master_record_t>*
     
     double value = 0;
     if (data_type == kBPS) {
-      value = bps;
+      value = Bps;
     } else if (data_type == kPPS) {
       value = pps;
     } else if (data_type == kFPS) {

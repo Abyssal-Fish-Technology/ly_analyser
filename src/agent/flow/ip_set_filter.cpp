@@ -10,9 +10,9 @@
 #include <sstream>
 
 static set<Pattern> pats_;
-static char kBPS[] = "bps";
+static char kBPS[] = "Bps";
 static char kPPS[] = "pps";
-static char kFPS[] = "sps";
+static char kFPS[] = "fps";
 
 namespace {
 void LoadIPsFromFile(const string& file_name, std::map<u32, string>& ips) {
@@ -673,16 +673,16 @@ void IPSetFilter::DivideMode() {
 
 
 void IPSetFilter::GenerateEvents(const IPsetKey& s, const IPsetStat& p, GenEventRes* events) {
-  double bps = 0, pps = 0, fps = 0;
+  double Bps = 0, pps = 0, fps = 0;
   for (auto& pat : pats_) {
     u32 interval = pat.end_time - pat.start_time;
-    bps = p.bytes / (double)interval;
+    Bps = p.bytes / (double)interval;
     pps = p.pkts / (double)interval;
     fps = p.flows / (double)interval;
     const string& data_type = pat.data_type;
     double value = 0;
     if (data_type == kBPS) {
-      value = bps;
+      value = Bps;
     } else if (data_type == kPPS) {
       value = pps;
     } else if (data_type == kFPS) {

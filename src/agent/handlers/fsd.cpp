@@ -88,25 +88,38 @@ void start_fcapd() {
 void start_probe() {
   unique_ptr<CMyINI> myini(new CMyINI());
   myini->ReadINI("/Agent/etc/probe.conf");
-  string cmd;
-  for (auto it= myini->map_ini.begin();it != myini->map_ini.end(); it++) {
-    auto t = it->second.sub_node;
-    if (t["disabled"] == "N") {
-      if (t["type"] == "fprobe") {
-        cmd = "fprobe -i " + t["if"] + " " + t["ip"] + ":" + t["port"];
-      } else if (t["type"] == "nprobe") {
-        if (t["ver"] == "5") {
-          cmd = "nprobe -i " + t["if"] + " -n " + t["ip"] + ":" + t["port"];  
-        }
-        if (t["ver"] == "9") {
-          cmd = "nprobe -T \"" + t["plugins"] + "\"" + " -i " + t["if"] + " -n " + t["ip"] + 
-                ":" + t["port"] + " -e 0 -w 32768 -G" + " -k -K " + t["pcap"];
+
+  unique_ptr<CachedConfig> cfg(CachedConfig::Create());
+  const auto& config = cfg->config();
+  for (const auto& dev : config.dev()) {
+    if (dev.disabled()) continue;
+    for (auto it= myini->map_ini.begin();it != myini->map_ini.end(); it++) { 
+      auto t = it->second.sub_node;
+      if (t["disabled"] == "Y") continue;
+      if (t["port"] != to_string(dev.port())) continue;
+      string cmd;
+
+      string probe = t["type"];
+      if (dev.model() == "V4") {
+        cmd = probe;
+      } else {
+        cmd = probe + " -f ip6";
+        if (string::npos != t["plugins"].find("IPV4")) {
+          log_err("probe ip type not match.\n");
+          continue;
         }
       }
+       
+      cmd += " -i " + t["if"] + " -n " + t["ip"] +
+              ":" + t["port"] + " -e 0 -w 32768 -G" + " -k 1 -K " + t["pcap"] + "/" + to_string(dev.id());
+
+      if (t["ver"] == "9") 
+        cmd += " -T \"" + t["plugins"] + "\"";
+     
       system(cmd.c_str());
+           
     }
   }
-  
 }
 
 void check_disk() {

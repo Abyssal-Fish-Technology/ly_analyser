@@ -201,11 +201,7 @@
 
 <img src="./doc/contact-weixin.png" alt="contact-weixin" width="200"/>
 
-​    开源负责人：
 
-
-
-<img src="./doc/contact-wangshanbiao.png" alt="contact-wangshanbiao" width="200"/>
 
 微信公众号： 深海鱼科技有限公司
 

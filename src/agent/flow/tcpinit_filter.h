@@ -39,14 +39,15 @@ class TcpinitFilter : public FlowFilter {
     u64 flows;
     u64 pkts;
     u64 bytes;
+    char app_proto[APP_PROTO_LEN];
   };
 
   TcpinitFilter(u32 dev_id, const string& model, std::unique_ptr<TSDB> tsdb);
   bool UpdateByFlow(std::vector<master_record_t>* flowset);
   bool UpdateByFlowV6(std::vector<master_record_t>* flowset);
 
-  void UpdateTcpinits(u32 first, u32 last, u32 sip[], u32 dip[],
-                   u16 dport, u64 pkts, u64 bytes);
+  void UpdateTcpinits(u32 first, u32 last, u32 sip[], u16 sport, u32 dip[],
+                   u16 dport, u8 tos, u16 retcode, char* pname, char* service_name, u64 pkts, u64 bytes);
   void InsertTcpinitToTSDB(const TvcKey&, const TcpinitStat&);
   void CheckTcpinit(const Slice& key, const Slice& val,
                     const feature::FeatureReq& req,
@@ -58,7 +59,8 @@ class TcpinitFilter : public FlowFilter {
   u32 dev_id_;
   string model_;
   std::unique_ptr<TSDB> tsdb_;
-  std::map<TvcKey, TcpinitStat> tcpinits_;
+  std::map<TvcKey, TcpinitStat> tcpinit_req_;
+  std::map<TvcKey, TcpinitStat> tcpinit_res_;
   std::map<u32, std::set<TvcKey>> caches_;
 };
 

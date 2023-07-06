@@ -72,13 +72,15 @@ struct AssetsrvKey {
 struct TvcKey {
   u32 sip[4], dip[4];
   u16 dport;
+  u16 retcode;
+  bool has_res;
   bool operator<(const TvcKey& k) const {
     return memcmp(this, &k, sizeof(k)) < 0;
   }
   bool operator==(const TvcKey& s) const {
      return sip[0] == s.sip[0] && sip[1] == s.sip[1] && sip[2] == s.sip[2] && sip[3] == s.sip[3] &&
             dip[0] == s.dip[0] && dip[1] == s.dip[1] && dip[2] == s.dip[2] && dip[3] == s.dip[3] &&
-            dport == s.dport;
+            dport == s.dport && retcode == s.retcode && ((has_res && s.has_res) || (!has_res && !s.has_res));
   }
 };
 

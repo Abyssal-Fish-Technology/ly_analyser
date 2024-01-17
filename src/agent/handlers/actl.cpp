@@ -24,12 +24,21 @@ static CtlReq req;
 static CtlResponse rsp;
 static bool is_http = false;
 
-void add_each_res(const string& type, const string& op, string tid,
+#define TEMPLATE_THREAT "%IPV4_SRC_ADDR %IPV4_DST_ADDR \
+%IN_PKTS %IN_BYTES %FIRST_SWITCHED %LAST_SWITCHED \
+%L4_SRC_PORT %L4_DST_PORT %TCP_FLAGS %PROTOCOL %SRC_TOS \
+%DNS_REQ_DOMAIN %DNS_REQ_TYPE %DNS_RES_IP \
+%HTTP_URL %HTTP_REQ_METHOD %HTTP_HOST %HTTP_MIME %HTTP_RET_CODE \
+%ICMP_DATA %ICMP_SEQ_NUM %ICMP_PAYLOAD_LEN \
+%THREAT_TYPE %THREAT_NAME %THREAT_VERS %THREAT_TIME"
+
+void add_response_record(const string& node, const string& srv, const string& op, string id,
         const string& result, const string& status, const string& desc) {
   CtlRecord rec;
-  rec.set_type(type);
+  rec.set_node(node);
+  rec.set_srv(srv);
   rec.set_op(op);
-  rec.set_tid(stoi(tid));
+  rec.set_id(stoi(id));
   rec.set_result(result);
   rec.set_status(status);
   rec.set_desc(desc);
@@ -43,26 +52,101 @@ void start_fcapd() {
   unique_ptr<CachedConfig> cfg(CachedConfig::Create());
   const auto& config = cfg->config();
   for (const auto& dev : config.dev()) {
+    // if ( id != 0 && dev.id() != id ) continue;
     if (!dev.disabled()) {
+      cmd = "/Agent/bin/";
+
+      if (dev.flowtype() == "netflow") {
+        cmd += "nfcapd";
+      } else if (dev.flowtype() == "sflow") {
+        cmd += "sfcapd";
+      } else {
+        continue;
+      }
+
+      if (dev.has_port()){
+        cmd += " -p " + to_string(dev.port());
+      } else {
+        continue;
+      }
+
+      cmd += " -w -D -l ";
       dir = "/data/flow/" + to_string(dev.id());
       if (opendir(dir.c_str()) == NULL) {
-        if (mkdir(dir.c_str(), 755)) return;
+        log_warning("opendir failed: %s", dir.c_str());
+        if (mkdir(dir.c_str(), 755) != 0) {
+          log_warning("mkdir failed: %s", dir.c_str());
+          continue;
+        }
       }
-      if (dev.flowtype() == "netflow") {
-        cmd = "/Agent/bin/nfcapd -w -D -l " + dir + " " + "-p " + to_string(dev.port());
-      } else if (dev.flowtype() == "sflow") {
-        cmd = "/Agent/bin/sfcapd -w -D -l " + dir + " " + "-p " + to_string(dev.port());
-      }
+      cmd += dir;
+
+      if(DEBUG) log_info("capd start: %s\n", cmd.c_str());
       system(cmd.c_str());
     }
   }
 }
 
+void start_probe(uint devid) {
+  string cmd;
+  string dir;
+  string temp = TEMPLATE_THREAT;
+  unique_ptr<CachedConfig> cfg(CachedConfig::Create());
+  const auto& config = cfg->config();
+  for (const auto& dev : config.dev()) {
+    if ( devid != 0 && dev.id() != devid ) continue;
+    if (!dev.disabled()) {
+      cmd = "lyprobe";
+
+      if (dev.interface() != ""){
+        cmd += " -i " + dev.interface();
+      }
+
+      if (dev.has_port()){
+        if (dev.ip() == ""){
+          cmd += " -n 127.0.0.1:" + to_string(dev.port());
+        } else {
+          cmd += " -n " + dev.ip() + ":" + to_string(dev.port());
+        }
+      } else {
+        continue;
+      }
+
+      if ( dev.pcap_level() > 0) {
+        dir = "/data/cap/" + to_string(dev.id());        
+        if (opendir(dir.c_str()) == NULL) {
+        log_warning("opendir failed: %s", dir.c_str());
+        if (mkdir(dir.c_str(), 755) != 0) {
+          log_warning("mkdir failed: %s", dir.c_str());
+          continue;
+        }
+      }
+        cmd += " -k " + to_string(dev.pcap_level()) + " -K " + dir;
+      }
+
+      if (dev.temp() != ""){
+        cmd += " -T \"" + dev.temp() + "\"";
+      } else {
+        cmd += " -T \"" + temp + "\"";
+      }
+
+      if (dev.filter() != ""){
+        cmd += " -f \"" + dev.filter() + "\"";
+      }
+
+      cmd += " -e 0 -w 32768 -G &>/dev/null";
+
+      if(DEBUG) log_info("probe start: %s\n", cmd.c_str());
+      system(cmd.c_str());
+    }
+  }
+}
 
 static void ProcessCap() {
   FILE* fp = NULL;
   char line[LINE_MAX] = "";
   string cmd;
+  string node = GetReqNodeStr(&req);
   string op = GetReqOpStr(&req);
 
   switch (req.op()) {
@@ -72,23 +156,25 @@ static void ProcessCap() {
       cmd = "ps -A | grep fcapd";
       fp = popen(cmd.c_str(), "r");
       if (fgets(line, sizeof(line), fp)) {
-        add_each_res("cap", op, req.tid(), "failed", "active", "");  
+        add_response_record(node, "cap", op, req.id(), "failed", "active", "");  
       } else {
-        add_each_res("cap", op, req.tid(), "succeed", "inactive", "");
+        add_response_record(node, "cap", op, req.id(), "succeed", "inactive", "");
       }
-      pclose(fp);   
-    }break;
+      pclose(fp);
+      break; 
+    }
     case CtlReq::START: {
         start_fcapd();
         fp = popen("ps -A | grep fcapd", "r");
         if (fgets(line, sizeof(line), fp)) {
-          add_each_res("cap", op, req.tid(), "succeed", "active", "");
+          add_response_record(node, "cap", op, req.id(), "succeed", "active", "");
         } else {
-          add_each_res("cap", op, req.tid(), "failed", "inactive", "");
+          add_response_record(node, "cap", op, req.id(), "failed", "inactive", "");
         }
       
       pclose(fp);
-    } break;
+      break;
+    } 
     case CtlReq::RESTART: {
       cmd = "pkill fcapd";
       system(cmd.c_str()); //先kill进程再重新执行
@@ -96,23 +182,25 @@ static void ProcessCap() {
       start_fcapd();
       fp = popen("ps -A | grep fcapd", "r");
       if (fgets(line, sizeof(line), fp)) {
-        add_each_res("cap", op, req.tid(), "succeed", "active", "");
+        add_response_record(node, "cap", op, req.id(), "succeed", "active", "");
       } else {
-        add_each_res("cap", op, req.tid(), "failed", "inactive", "");
+        add_response_record(node, "cap", op, req.id(), "failed", "inactive", "");
       }
       pclose(fp);
-    } break;
-    case CtlReq::STAT: {
+      break;
+    } 
+    case CtlReq::STATUS: {
       cmd = "ps -A | grep fcapd";
       fp = popen(cmd.c_str(), "r");
       if (fp == NULL) return;
       if (fgets(line, sizeof(line), fp)) {
-        add_each_res("cap", op, req.tid(), "succeed", "active", "");
+        add_response_record(node, "cap", op, req.id(), "succeed", "active", "");
       } else {
-        add_each_res("cap", op, req.tid(), "succeed", "inactive", "");
+        add_response_record(node, "cap", op, req.id(), "succeed", "inactive", "");
       }
       pclose(fp);
-    } break;
+      break;
+    } 
     default:
       break;
   }
@@ -131,74 +219,45 @@ static string get_pid(const string& str) {
   return vec[1];
 }
 
-
-void start_probe_from_ini(unique_ptr<CMyINI>& myini, const config::Device& dev) {
-  for (auto it= myini->map_ini.begin();it != myini->map_ini.end(); it++) {
-    auto t = it->second.sub_node;
-    if (t["disabled"] == "Y") continue;
-    if (t["port"] != to_string(dev.port())) continue;
-    string cmd;
-
-    string probe = t["type"];
-    if (dev.model() == "V4") {
-      cmd = probe;
-    } else {
-      cmd = probe + " -f ip6";
-      if (string::npos != t["plugins"].find("IPV4")) {
-        log_err("probe ip type not match.\n");
-        continue;
-      }
-    }
-
-    cmd += " -b 0 -i " + t["if"] + " -n " + t["ip"] +
-            ":" + t["port"] + " -e 0 -w 32768 -G" + " -k 1 -K " + t["pcap"] + "/" + to_string(dev.id());
-
-    if (t["ver"] == "9")
-      cmd += " -T \"" + t["plugins"] + "\"";
-
-    system(cmd.c_str());
-  } 
-}
-
-
-static void ProcessProbe() {
-  unique_ptr<CachedConfig> cfg(CachedConfig::Create());
-  std::map<string, config::Device> devs; 
-  std::set<string> devids;
-  for (const auto& dev : cfg->config().dev()) {
-    if (!dev.disabled())
-      devs[to_string(dev.id())] = dev;
-  }
-
-  if (req.has_devid()) {
-    string ids = const_cast<char*>(req.devid().c_str()); 
-    devids = split_string(ids, ",");
-  
-    for (auto it = devids.begin(); it != devids.end();) {
-      auto& did = *it;
-      if (devs.find(did) != devs.end()) {
-        if (to_string(devs[did].agentid()) != req.tid()) {
-          devids.erase(it++);
-        } else {
-          ++it;
-        }
-      } else {
-        devids.erase(it++);
-      }
-    }
-  } else {
-    for (const auto& dev : cfg->config().dev()) {
-      if (!dev.disabled() && to_string(dev.agentid()) == req.tid()) {
-        devids.insert(to_string(dev.id()));
-      }
-    } 
-  }
-  if (req.has_devid() && devids.size()==0) return;
-
+static int get_probe_status(const string& cfg_port){
   char line[LINE_MAX] = "";
   FILE* fp = NULL;
   string cmd;
+
+  cmd = "ps -ef | grep probe | grep -v grep";
+  fp = popen(cmd.c_str(), "r");
+  if (fp == NULL) return -1;
+  set<string> active_probe;
+  while (fgets(line, sizeof(line), fp)) {
+    string sline = line;
+    active_probe.insert(get_probe_port(sline));
+  }
+  pclose(fp);
+  if (!active_probe.empty()) {
+      return active_probe.count(cfg_port);
+  } else {//无存活的probe进程
+      return 0;
+  }
+}
+
+static void ProcessProbe() {
+  char line[LINE_MAX] = "";
+  FILE* fp = NULL;
+  string cmd;
+  string cfg_port;
+  string node = GetReqNodeStr(&req);
   string op = GetReqOpStr(&req);
+
+  unique_ptr<CachedConfig> cfg(CachedConfig::Create());
+  config::Device probe_cfg;
+  if (req.has_id()) {
+    uint req_id = stoi(req.id());
+    for (const auto& dev : cfg->config().dev()) {
+      if ( dev.id() == req_id && !dev.disabled())
+        probe_cfg = dev;
+        cfg_port = to_string(probe_cfg.port());
+    }
+  }
 
   switch (req.op()) {
     case CtlReq::STOP: {
@@ -213,168 +272,96 @@ static void ProcessProbe() {
       }
       pclose(fp);
       //kill掉进程
-      if (req.has_devid()) {
-        for (auto& devid : devids) {
-          auto port = to_string(devs[devid].port());
-          if (active_probe.count(port)) {
-            string ktr = "kill -9 " + active_probe[port];
-            system(ktr.c_str());
-            add_each_res("probe", op, req.tid(), "succeed", "inactive", devid);
-          }
+      if (req.has_id()) {
+        // auto cfg_port = to_string(probe_cfg.port());
+        if (active_probe.count(cfg_port)) {
+          string ktr = "kill -9 " + active_probe[cfg_port];
+          system(ktr.c_str());
         }
+        int status = get_probe_status(cfg_port);
+        if (status == 0) {
+          add_response_record(node, "probe", op, req.id(), "succeed", "inactive", "no probe running");
+        } else if (status > 0) {
+          add_response_record(node, "probe", op, req.id(), "failed", "active", "still have probe running");
+        } else {
+          add_response_record(node, "probe", op, req.id(), "failed", "inactive", "unknown error");
+        }
+        
       } else {
         system("pkill probe");
-        add_each_res("probe", op, req.tid(), "succeed", "inactive", "");
+        add_response_record(node, "probe", op, 0, "succeed", "inactive", "stop all probe");
       }
-    } break;
-    case CtlReq::RESTART: {
-      ifstream ifs("/etc/rc.local");
-      string sline;
-      map<string, string> cmds;
-      while(getline(ifs, sline)) {
-        cmd.clear();
-        trim(sline);
-        if (sline.empty() || sline[0] == '#') continue;
-        if (sline.find("probe -") != string::npos) {  //nprobe cmd line
-          auto port_str = get_probe_port(sline);
-          cmds[port_str] = sline;
-        }
-      }
-      if (!req.has_devid()) {
-        cmd = "pkill probe";
-        system(cmd.c_str());
-        for (auto itr : cmds) {
-          auto& s = itr.first;
-          auto& p = itr.second;
-          system(p.c_str());
-          CtlRecord rec;
-          rec.set_type("probe");
-          rec.set_op(GetReqOpStr(&req));
-          rec.set_tid(stoi(req.tid()));
-          rec.set_result("succeed");
-          rec.set_status("active");
-          for (auto it : devs) {
-            if (to_string(it.second.agentid()) == req.tid() && to_string(it.second.port()) == s) {
-              rec.set_desc(it.first);
-              break;
-            }
-          }
-          auto new_rec = rsp.add_records();
-          *new_rec = rec;
-        }
-      } else {
-        cmd = "ps -ef | grep probe | grep -v grep";
-        fp = popen(cmd.c_str(), "r");
-        if (fp == NULL) return;
-        map<string, string> active_probe;
-        while (fgets(line, sizeof(line), fp)) {
-          string sline = line;
-          active_probe[get_probe_port(sline)] = get_pid(sline);
-        }
-        for (auto& devid : devids) {
-          auto id = to_string(devs[devid].port());
-          if (active_probe.count(id)) {
-            string ktr = "kill -9 " + active_probe[id];
-            system(ktr.c_str());
-            if (cmds.count(id)) {
-              system(cmds[id].c_str());
-              CtlRecord rec;
-              rec.set_type("probe");
-              rec.set_op(GetReqOpStr(&req));
-              rec.set_tid(stoi(req.tid()));
-              rec.set_result("succeed");
-              rec.set_status("active");
-              rec.set_desc(devid);
-              auto new_rec = rsp.add_records();
-              *new_rec = rec;
-            }
-          }
-        }
-      }
-    } break;
+      break;
+    } 
     case CtlReq::START: { 
-      unique_ptr<CMyINI> myini(new CMyINI());
-      myini->ReadINI("/Agent/etc/probe.conf");
-      //启动nprobei
-      if (req.has_devid()) { 
-        for (auto& did : devids) {
-          start_probe_from_ini(myini, devs[did]);
-        } 
-      } else {
-        for (auto& dev : devs) {
-          start_probe_from_ini(myini, dev.second);
-        }
+      if (!req.has_id()) {
+        add_response_record(node, "probe", op, req.id(), "failed", "inactive", "No id specified.");
+        return;
       }
+
+      // 检查后台
+      int status = get_probe_status(cfg_port);
+      if (status > 0) {
+        add_response_record(node, "probe", op, req.id(), "failed", "active", "already running");
+        return;
+      }
+
+      //启动probe
+      start_probe(stoi(req.id()));
 
       //查看是否开启成功
-      cmd = "ps -ef | grep probe | grep -v grep";
-      fp = popen(cmd.c_str(), "r");
-      if (fp == NULL) return;
-      set<string> active_probe;
-      while (fgets(line, sizeof(line), fp)) {
-        string sline = line;
-        active_probe.insert(get_probe_port(sline));
+      status = get_probe_status(cfg_port);
+      if (status > 0) {
+        add_response_record(node, "probe", op, req.id(), "succeed", "active", "probe running");
+      } else {
+        add_response_record(node, "probe", op, req.id(), "failed", "inactive", "no probe running");
       }
-      if (!active_probe.empty()) {
-        if (req.has_devid()) { //指定devid 
-          for (auto& did : devids) {
-            if (active_probe.count(to_string(devs[did].port()))) 
-              add_each_res("probe", op, req.tid(), "succeed", "active", did);
-            else
-              add_each_res("probe", op, req.tid(), "failed", "inactive", did);
-          }
-        } else {
-          for (auto& k : active_probe) { //无devid参数,获取全部nprobe状态
-            for (auto it : devs) {
-              if (to_string(it.second.agentid()) == req.tid() && to_string(it.second.port()) == k) {
-                add_each_res("probe", op, req.tid(), "succeed", "active", it.first);
-                break;
-              }
-            }
-          }
-        }
-      } else {//无存活的probe进程
-        for (auto& id : devids) {
-          add_each_res("probe", op, req.tid(), "failed", "inactive", id);
-        }
+      break;
+    } 
+    case CtlReq::RESTART: {
+      // add_response_record(node, "probe", op, req.id(), "failed", "inactive", "try to use stop & start");
+ 
+      if (!req.has_id()) {
+        add_response_record(node, "probe", op, req.id(), "failed", "inactive", "need to specified id");
+        return;
       }
 
-      pclose(fp); 
-    } break;
-    case CtlReq::STAT: {
       cmd = "ps -ef | grep probe | grep -v grep";
       fp = popen(cmd.c_str(), "r");
       if (fp == NULL) return;
-      set<string> active_probe;
+      map<string, string> active_probe;
       while (fgets(line, sizeof(line), fp)) {
         string sline = line;
-        active_probe.insert(get_probe_port(sline));
+        active_probe[get_probe_port(sline)] = get_pid(sline);
       }
-      if (!active_probe.empty()) {
-        if (req.has_devid()) {
-          for (auto& did : devids) {
-            if (active_probe.count(to_string(devs[did].port()))) {
-              add_each_res("probe", op, req.tid(), "succeed", "active", did);
-            } else {
-              add_each_res("probe", op, req.tid(), "succeed", "inactive", did);
-            }
-          }
-        } else {   //无devid参数,获取全部nprobe状态
-          for (auto& k : active_probe) {
-            for (auto it : devs) {
-              if (to_string(it.second.agentid()) == req.tid() && to_string(it.second.port()) == k) {
-                add_each_res("probe", op, req.tid(), "succeed", "active", it.first);
-              }
-            }
-          }
-        }  
-      } else {
-        for (auto& id : devids) {
-          add_each_res("probe", op, req.tid(), "succeed", "inactive", id);
-        }
-      } 
       pclose(fp);
-    } break;
+      //kill掉进程
+      if (active_probe.count(cfg_port)) {
+        string ktr = "kill -9 " + active_probe[cfg_port];
+        system(ktr.c_str());
+      }
+
+      //启动probe
+      start_probe(stoi(req.id()));
+
+      //查看是否开启成功
+      int status = get_probe_status(cfg_port);
+      if (status > 0) {
+        add_response_record(node, "probe", op, req.id(), "succeed", "active", "probe running");
+      } else {
+        add_response_record(node, "probe", op, req.id(), "failed", "inactive", "no probe running");
+      }
+      break;
+    } 
+    case CtlReq::STATUS: {
+      int status = get_probe_status(cfg_port);
+      if (status > 0) {
+        add_response_record(node, "probe", op, req.id(), "succeed", "active", "probe running");
+      } else {
+        add_response_record(node, "probe", op, req.id(), "succeed", "inactive", "probe stop running");
+      }
+      break;
+    }
     default:
       break;
   }
@@ -384,6 +371,7 @@ static void ProcessSsh() {
   FILE* fp = NULL;
   char line[LINE_MAX];
   string cmd;
+  string node = GetReqNodeStr(&req);
   string op = GetReqOpStr(&req);   
 
   switch (req.op()) {
@@ -396,10 +384,10 @@ static void ProcessSsh() {
       while(fgets(line, sizeof(line), fp)) {
         string str = line;
         if (str.find("Active: active (running)") != string::npos) {
-          add_each_res("ssh", op, req.tid(), "succeed", "active", "");
+          add_response_record(node, "ssh", op, req.id(), "succeed", "active", "");
           break;
         } else if (str.find("Active: inactive (dead)") != string::npos) {
-          add_each_res("ssh", op, req.tid(), "failed", "inactive", "");
+          add_response_record(node, "ssh", op, req.id(), "failed", "inactive", "");
           break;
         }
       }
@@ -413,25 +401,25 @@ static void ProcessSsh() {
       while(fgets(line, sizeof(line), fp)) {
         string str = line;
         if (str.find("Active: active (running)") != string::npos) {
-          add_each_res("ssh", op, req.tid(), "failed", "active", "");
+          add_response_record(node, "ssh", op, req.id(), "failed", "active", "");
           break;
         } else if (str.find("Active: inactive (dead)") != string::npos) {
-          add_each_res("ssh", op, req.tid(), "succeed", "inactive", "");
+          add_response_record(node, "ssh", op, req.id(), "succeed", "inactive", "");
           break;
         }
       }
       pclose(fp);
     } break;
-    case CtlReq::STAT: {
+    case CtlReq::STATUS: {
       cmd = "systemctl status sshd";
       fp = popen(cmd.c_str(), "r");
       while(fgets(line, sizeof(line), fp)) {
         string str = line;
         if (str.find("Active: active (running)") != string::npos) {
-          add_each_res("ssh", op, req.tid(), "succeed", "active", "");
+          add_response_record(node, "ssh", op, req.id(), "succeed", "active", "");
           break;
         } else if (str.find("Active: inactive (dead)") != string::npos) {
-          add_each_res("ssh", op, req.tid(), "succeed", "inactive", "");
+          add_response_record(node, "ssh", op, req.id(), "succeed", "inactive", "");
           break;
         }
       }
@@ -443,15 +431,11 @@ static void ProcessSsh() {
 }
 
 static void ProcessHttp() {
-  CtlRecord rec;
   char line[LINE_MAX];
   FILE* fp = NULL;
   string cmd;
+  string node = GetReqNodeStr(&req);
   string op = GetReqOpStr(&req);
-  //rec.set_type(GetReqTypeStr(&req));
-  rec.set_type("http");
-  rec.set_op(op);
-  rec.set_tid(stoi(req.tid()));
 
   switch (req.op()) {
     case CtlReq::START:
@@ -463,19 +447,16 @@ static void ProcessHttp() {
       while(fgets(line, sizeof(line), fp)) {
         string str = line;
         if (str.find("Active: active (running)") != string::npos) {
-          rec.set_status("active");
-          rec.set_result("succeed");
-          rec.set_desc("");
+          add_response_record(node, "http", op, req.id(), "succeed", "active", "");
           break;
         } else if (str.find("Active: inactive (dead)") != string::npos) {
-          rec.set_status("inactive");
-          rec.set_result("failed");
-          rec.set_desc("");
+          add_response_record(node, "http", op, req.id(), "failed", "inactive", "");
           break;
         }
       }
       pclose(fp);
-    } break;
+      break;
+    }
     case CtlReq::STOP: {
       cmd = "systemctl stop httpd";
       popen(cmd.c_str(), "r");
@@ -484,46 +465,40 @@ static void ProcessHttp() {
       while(fgets(line, sizeof(line), fp)) {
         string str = line;
         if (str.find("Active: active (running)") != string::npos) {
-          rec.set_status("active");
-          rec.set_result("failed");
-          rec.set_desc("");
+          add_response_record(node, "http", op, req.id(), "failed", "active", "");
           break;
         } else if (str.find("Active: inactive (dead)") != string::npos) {
-          rec.set_status("inactive");
-          rec.set_result("succeed");
-          rec.set_desc("");
+          add_response_record(node, "http", op, req.id(), "succeed", "inactive", "");
           break;
         }
       }     
       pclose(fp);
-    } break;
-    case CtlReq::STAT: {
+      break;
+    } 
+    case CtlReq::STATUS: {
       cmd = "systemctl status httpd";
       fp = popen(cmd.c_str(), "r");
       while(fgets(line, sizeof(line), fp)) {
         string str = line;
         if (str.find("Active: active (running)") != string::npos) {
-          rec.set_status("active");
-          rec.set_result("succeed");
-          rec.set_desc("");
+          add_response_record(node, "http", op, req.id(), "succeed", "active", "");
           break;
         } else if (str.find("Active: inactive (dead)") != string::npos) {
-          rec.set_status("inactive");
-          rec.set_result("succeed");
-          rec.set_desc("");
+          add_response_record(node, "http", op, req.id(), "succeed", "inactive", "");
           break;
         }
       }
       pclose(fp);
-    } break;
+      break;
+    } 
     default:
       break;
   }
-  auto new_rec = rsp.add_records();
-  *new_rec = rec;
 }
 
 static void ProcessDisk() {
+  string node = GetReqNodeStr(&req);
+  string op = GetReqOpStr(&req);
   string cmd = "df -h";
   FILE* fp = popen(cmd.c_str(), "r");
   char line[LINE_MAX];
@@ -546,10 +521,10 @@ static void ProcessDisk() {
   }
   for (auto& it : disk_rec) {
     CtlRecord rec;
-    //rec.set_type(GetReqTypeStr(&req));
-    rec.set_type("disk");
-    rec.set_op(GetReqOpStr(&req));
-    rec.set_tid(stoi(req.tid()));
+    rec.set_node(node);
+    rec.set_srv("disk");
+    rec.set_op(op);
+    rec.set_id(stoi(req.id()));
     if (it.first == "/home" || it.first == "/data" || it.first == "/") {
       rec.set_status(to_string(it.second)+ "%");
       rec.set_desc(it.first);
@@ -565,6 +540,7 @@ static void ProcessFsd() {
   char line[LINE_MAX];
   FILE* fp = NULL;
   string cmd;
+  string node = GetReqNodeStr(&req);
   string op = GetReqOpStr(&req);
 
   switch (req.op()) {
@@ -573,9 +549,9 @@ static void ProcessFsd() {
       popen(cmd.c_str(), "r");
       fp = popen("ps -A | grep fsd", "r");
       if (!feof(fp)) {
-        add_each_res("fsd", op, req.tid(), "succeed", "active", "");
+        add_response_record(node, "fsd", op, req.id(), "succeed", "active", "");
       } else {
-        add_each_res("fsd", op, req.tid(), "failed", "inactive", "");
+        add_response_record(node, "fsd", op, req.id(), "failed", "inactive", "");
       }
       pclose(fp);      
       break;
@@ -585,9 +561,9 @@ static void ProcessFsd() {
       popen("/Agent/bin/fsd", "r");
       fp = popen("ps -A | grep fsd", "r");
       if (!feof(fp)) {
-        add_each_res("fsd", op, req.tid(), "succeed", "active", "");
+        add_response_record(node, "fsd", op, req.id(), "succeed", "active", "");
       } else {
-        add_each_res("fsd", op, req.tid(), "failed", "inactive", "");
+        add_response_record(node, "fsd", op, req.id(), "failed", "inactive", "");
       }
       pclose(fp);      
       break;
@@ -597,19 +573,19 @@ static void ProcessFsd() {
       cmd = "ps -A | grep fsd";
       fp = popen(cmd.c_str(), "r");
       if (fgets(line, sizeof(line), fp)) {
-        add_each_res("fsd", op, req.tid(), "failed", "active", "");
+        add_response_record(node, "fsd", op, req.id(), "failed", "active", "");
       } else {
-        add_each_res("fsd", op, req.tid(), "succeed", "inactive", "");
+        add_response_record(node, "fsd", op, req.id(), "succeed", "inactive", "");
       }
       pclose(fp);
       break;
-    case CtlReq::STAT:
+    case CtlReq::STATUS:
       cmd = "ps -A | grep fsd";    
       fp = popen(cmd.c_str(), "r");
       if (fgets(line, sizeof(line), fp)) {
-        add_each_res("fsd", op, req.tid(), "succeed", "active", "");
+        add_response_record(node, "fsd", op, req.id(), "succeed", "active", "");
       } else {
-        add_each_res("fsd", op, req.tid(), "succeed", "inactive", "");
+        add_response_record(node, "fsd", op, req.id(), "succeed", "inactive", "");
       }
       pclose(fp);
       break;
@@ -618,120 +594,98 @@ static void ProcessFsd() {
   }
 }
 
-static void ProcessAll() {
-  ProcessSsh();
-  ProcessHttp();
-  ProcessProbe();
-  ProcessCap();
-  ProcessDisk();
-  ProcessFsd();
-}
-
 static void process() {
   if (is_http) std::cout << "Content-Type: application/protobuf; charset=UTF-8\r\n\r\n";
   std::ostringstream out;
   uid_t uid = getuid();
   setuid(0);
 
-  switch (req.type()) {
-    case CtlReq::SSH:
-      ProcessSsh();
+  switch (req.node()) {
+
+    case CtlReq::NODE_AGENT: {
+      switch (req.srv()) {
+        case CtlReq::SRV_DISK: {
+          ProcessDisk();
+          break;
+        }
+        case CtlReq::SRV_SSH: {
+          ProcessSsh();
+          break;
+        }
+        case CtlReq::SRV_HTTP: {
+          ProcessHttp();
+          break;
+        }
+        case CtlReq::SRV_CAP: {
+          ProcessCap();
+          break;
+        }
+        case CtlReq::SRV_FSD: {
+          ProcessFsd();
+          break;
+        }
+        case CtlReq::SRV_ALL: {
+          ProcessDisk();
+          ProcessSsh();
+          ProcessHttp();
+          ProcessCap();
+          ProcessFsd();
+          break;
+        }
+        default:
+          break;
+      }
       break;
-    case CtlReq::HTTP:
-      ProcessHttp();
+    }
+
+    case CtlReq::NODE_PROBE: {
+      switch (req.srv()) {
+        case CtlReq::SRV_DISK: {
+          ProcessDisk();
+          break;
+        }
+        case CtlReq::SRV_SSH: {
+          ProcessSsh();
+          break;
+        }
+        case CtlReq::SRV_PROBE: {
+          ProcessProbe();
+          break;
+        }
+        case CtlReq::SRV_ALL: {
+          ProcessDisk();
+          ProcessSsh();
+          ProcessProbe();
+          break;
+        }
+        case CtlReq::SRV_FSD: {
+          ProcessFsd();
+          break;
+        }
+        default:
+          break;
+      }
       break;
-    case CtlReq::PROBE:
-      ProcessProbe();
+    }
+
+    default: {
       break;
-    case CtlReq::CAP:
-      ProcessCap();
-      break;
-    case CtlReq::ALL:
-      ProcessAll();
-      break;
-    case CtlReq::DISK:
-      ProcessDisk();
-      break;
-    case CtlReq::FSD:
-      ProcessFsd();
-      break;
-    default:
-      break;
+    }
+
   }
 
-
   setuid(uid);
+
   if (!rsp.SerializeToOstream(&out)) {
     log_err("failed to serialize to string");
     return;  
   }
 
+  if (DEBUG) log_info("out: %s\n", out.str().c_str());
+
   std::cout << out.str();
 
   return;
-}
-
-static void setService(const string& str, CtlReq* req) {
-  if (str == "SSH")
-    req->set_type(CtlReq::SSH);
-  else if (str == "HTTP")
-    req->set_type(CtlReq::HTTP);
-  else if (str == "PROBE")
-    req->set_type(CtlReq::PROBE);
-  else if (str == "CAP")
-    req->set_type(CtlReq::CAP);
-  else if (str == "FSD")
-    req->set_type(CtlReq::FSD);
-  else if (str == "DISK")
-    req->set_type(CtlReq::DISK);
-  else
-    req->set_type(CtlReq::ALL);
-}
-
-static void setOp(const string& str, CtlReq* req) {
-  if (str == "START")
-    req->set_op(CtlReq::START);
-  else if (str == "STOP")
-    req->set_op(CtlReq::STOP);
-  else if (str == "STAT")
-    req->set_op(CtlReq::STAT);
-  else if (str == "RESTART")
-    req->set_op(CtlReq::RESTART);
-  else
-    req->set_op(CtlReq::STAT);
-}
-
-void ParseFromCmdline(int argc, char*argv[]) {
-  char c;
-  while ((c = getopt(argc, argv, "t:o:i:d:")) != -1)
-  {
-    if (optarg==NULL)
-        continue;
-
-    switch (c)
-    {
-      case 'i':
-        req.set_tid(optarg);
-        break;
-      case 'd':
-        req.set_devid(optarg);
-        break;
-      case 't':
-      {
-        string type = optarg;
-        setService(boost::to_upper_copy(type), &req);
-        break;
-      }
-      case 'o':
-      {
-        string op = optarg;
-        setOp(boost::to_upper_copy(op), &req);
-        break;
-      }
-      default:
-        break;
-    }
-  }
 }
 
 int main(int argc, char* argv[])
@@ -754,8 +708,9 @@ int main(int argc, char* argv[])
       std::cout << "HTTP/1.1 400 Invalid Params\r\n\r\n";
       return 0;
     }
-  } else 
-    ParseFromCmdline(argc, argv);
+  } else {
+    ParseCtlReqFromCmdline(argc, argv, &req);
+  }
 
   try {
     if (DEBUG) log_info("ctl_req: %s\n", req.DebugString().c_str());

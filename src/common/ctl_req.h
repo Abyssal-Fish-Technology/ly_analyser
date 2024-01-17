@@ -13,7 +13,9 @@ class Cgicc;
 namespace ctl {
 bool validate_request(CtlReq* req);
 bool ParseCtlReqFromUrlParams(cgicc::Cgicc& cgi, CtlReq* req);
-std::string GetReqTypeStr(CtlReq* req);
+void ParseCtlReqFromCmdline(int argc, char*argv[], CtlReq* req);
+std::string GetReqNodeStr(CtlReq* req);
+std::string GetReqSrvStr(CtlReq* req);
 std::string GetReqOpStr(CtlReq* req);
 }
 

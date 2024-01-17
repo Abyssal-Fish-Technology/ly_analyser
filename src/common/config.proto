@@ -37,6 +37,11 @@ message Device {
   optional bool disabled = 10 [default = false]; 
   repeated Interface interfaces = 11;
   optional string flowtype = 12;
+
+  optional uint32 pcap_level = 13;
+  optional string temp = 14;
+  optional string filter = 15;
+  optional string interface = 16;
 }
 
 message Event {
